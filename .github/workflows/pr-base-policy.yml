@@ -1,0 +1,25 @@
+name: PR base policy
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  check-base:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check release and hotfix PR targets
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
+        run: |
+          if [[ "$HEAD_REPO" != "$THIS_REPO" ]]; then
+            echo '::error::PRs must originate from this authorized repository.'
+            exit 1
+          fi
+          if [[ "$BASE_REF" == "main" && "$HEAD_REF" != "staging" && "$HEAD_REF" != hotfix/* ]]; then
+            echo '::error::通常PRのbaseはstagingです。main宛てはstagingのリリースまたはhotfix/*のみです。'
+            exit 1
+          fi
